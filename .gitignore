@@ -1,0 +1,17 @@
+.env
+models_config.py
+
+venv/
+env/
+instance/
+__pycache__/
+*.py[cod]
+*.sqlite
+Train_Cropyield_Model.csv
+*.h5
+*.pkl
+
+.DS_Store
+dump.rdb
+
+

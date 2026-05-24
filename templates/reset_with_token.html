@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Set New Password | © 2026 MT | MaizeTech Nigeria</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            background: #f0f2f5; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            flex-direction: column; 
+        }
+        .reset-card { 
+            background: white; 
+            padding: 40px; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+            width: 100%; 
+            max-width: 400px; 
+            text-align: center; 
+            border-top: 5px solid #2e7d32;
+        }
+        .brand { 
+            color: #2e7d32; 
+            font-size: 28px; 
+            font-weight: bold; 
+            margin-bottom: 12px; 
+            display: block; 
+        }
+        .instruction { 
+            font-size: 14px; 
+            color: #666; 
+            margin-bottom: 30px; 
+            line-height: 1.6; 
+        }
+        .form-group { 
+            text-align: left; 
+            margin-bottom: 20px; 
+        }
+        label { 
+            display: block; 
+            margin-bottom: 8px; 
+            font-weight: 600; 
+            font-size: 12px; 
+            color: #555; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px;
+        }
+        input { 
+            width: 100%; 
+            padding: 12px; 
+            border: 1px solid #ddd; 
+            border-radius: 6px; 
+            box-sizing: border-box; 
+            outline: none; 
+            font-family: inherit; 
+            transition: 0.3s;
+        }
+        input:focus { 
+            border-color: #2e7d32; 
+            box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+        }
+        .btn-update { 
+            background: #2e7d32; 
+            color: white; 
+            border: none; 
+            padding: 14px; 
+            border-radius: 6px; 
+            font-weight: bold; 
+            width: 100%; 
+            cursor: pointer; 
+            font-size: 16px; 
+            transition: 0.3s; 
+            margin-top: 10px; 
+            box-shadow: 0 4px 6px rgba(46, 125, 50, 0.2);
+        }
+        .btn-update:hover { 
+            background: #1e3d1a; 
+            transform: translateY(-1px);
+        }
+        #error-msg { 
+            background: #ffebee; 
+            color: #c62828; 
+            padding: 12px; 
+            border-radius: 6px; 
+            font-size: 13px; 
+            margin-bottom: 20px; 
+            border: 1px solid #ffcdd2; 
+            display: none; 
+            text-align: left;
+        }
+        .footer-note {
+            margin-top: 30px; 
+            color: #999; 
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="reset-card">
+        <span class="brand">🌽 Secure Reset</span>
+        <p class="instruction">
+            Verification Successful. Please enter and confirm your new secure password below.
+        </p>
+
+        <!-- Dynamic Error Alert -->
+        <div id="error-msg">
+            <strong>Error:</strong> Passwords do not match. Please re-type carefully.
+        </div>
+
+        <form method="POST" id="resetForm">
+            <div class="form-group">
+                <label for="password">New Password</label>
+                <input type="password" id="password" name="password" required 
+                       placeholder="Minimum 6 characters" minlength="6">
+            </div>
+            <div class="form-group">
+                <label for="confirm_password">Confirm New Password</label>
+                <input type="password" id="confirm_password" name="confirm_password" required 
+                       placeholder="Repeat your new password">
+            </div>
+            <button type="submit" class="btn-update">Update & Sign In</button>
+        </form>
+    </div>
+
+    <p class="footer-note">
+        © 2026 MT | MaizeTech Nigeria | Security Module
+    </p>
+
+    <script>
+        const form = document.getElementById('resetForm');
+        const pass = document.getElementById('password');
+        const confirmPass = document.getElementById('confirm_password');
+        const errorMsg = document.getElementById('error-msg');
+
+        form.onsubmit = function(e) {
+            // Validation check to ensure passwords are identical
+            if (pass.value !== confirmPass.value) {
+                e.preventDefault(); 
+                errorMsg.style.display = 'block'; 
+                confirmPass.style.borderColor = '#c62828';
+                confirmPass.style.background = '#fff8f8';
+                return false;
+            }
+            return true;
+        };
+
+        // Reset styling and hide error when the user starts typing again
+        confirmPass.oninput = function() {
+            errorMsg.style.display = 'none';
+            confirmPass.style.borderColor = '#ddd';
+            confirmPass.style.background = '#fff';
+        };
+    </script>
+</body>
+</html>

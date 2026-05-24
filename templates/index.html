@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AgriTech Smart Dashboard | Admin</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f0f2f5; }
+        .navbar { background: #2e7d32; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
+        .container { padding: 30px; max-width: 1400px; margin: auto; }
+        
+        /* Buttons */
+        .btn { padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: 600; border: none; transition: 0.3s; color: white; display: inline-block; cursor: pointer; font-size: 13px; }
+        .btn-analytics { background: #1a237e; margin-right: 10px; }
+        .btn-add { background: #4caf50; }
+        .btn-schedule { background: #ff9800; margin-left: 10px; }
+        .btn-start { background: #2e7d32; border: 1px solid white; margin-left: 10px; }
+        .btn-pause { background: #d32f2f; margin-left: 10px; }
+        .btn-send { background: #2196f3; }
+        .btn-notify { background: #673ab7; margin-left: 5px; }
+        .btn-del { background: #f44336; margin-left: 5px; }
+        
+        /* Alerts */
+        .alert-card { padding: 15px; margin-bottom: 12px; border-radius: 8px; border-left: 6px solid; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .danger { border-color: #f44336; color: #b71c1c; }
+        .info { border-color: #2196f3; color: #0d47a1; }
+        .success { border-color: #4caf50; color: #1b5e20; }
+        
+        /* Table */
+        table { width: 100%; background: white; border-collapse: collapse; border-radius: 12px; overflow: hidden; margin-top: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+        th { background: #f8f9fa; font-size: 12px; text-transform: uppercase; color: #666; letter-spacing: 0.5px; }
+        tr:hover { background: #f9f9f9; }
+        
+        .logout-link { color: white; margin-left: 20px; font-size: 14px; text-decoration: none; border: 1px solid rgba(255,255,255,0.4); padding: 5px 15px; border-radius: 20px; transition: 0.3s; }
+        .logout-link:hover { background: white; color: #2e7d32; }
+
+        /* Chat Widget UI */
+        #chat-widget { position: fixed; bottom: 20px; right: 20px; z-index: 2000; }
+        #chat-box { display: none; width: 350px; height: 500px; background: white; border-radius: 12px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); flex-direction: column; overflow: hidden; position: absolute; bottom: 75px; right: 0; border: 1px solid #ddd; }
+        .chat-header { background: #2e7d32; color: white; padding: 15px; font-weight: bold; display: flex; justify-content: space-between; }
+        #messages { flex: 1; padding: 15px; overflow-y: auto; font-size: 14px; background: #f9f9f9; display: flex; flex-direction: column; gap: 10px; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h2>🌽 MaizeTech Nigeria (Admin)
+            {% if is_paused %}
+                <span style="font-size: 11px; background: #ffc107; color: black; padding: 4px 8px; border-radius: 12px; margin-left: 10px;">⏸️ Auto-Cycle Paused</span>
+            {% else %}
+                <span style="font-size: 11px; background: #8bc34a; color: white; padding: 4px 8px; border-radius: 12px; margin-left: 10px;">▶️ Auto-Cycle Running</span>
+            {% endif %}
+        </h2>
+        <div>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-analytics">📊 Analytics & Simulator</a>
+            <a href="{{ url_for('register') }}" class="btn btn-add">+ Register Farmer</a>
+            <a href="{{ url_for('start_automated_schedule') }}" class="btn btn-start">▶️ Start Cycle</a>
+            <a href="{{ url_for('pause_automated_schedule') }}" class="btn btn-pause">⏸️ Pause</a>
+            <a href="{{ url_for('trigger_schedule') }}" class="btn btn-schedule" onclick="return confirm('Trigger manual blast to all farmers?')">⚡ Manual Blast</a>
+            <a href="{{ url_for('logout') }}" class="logout-link">Logout</a>
+        </div>
+    </div>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <h3>Growth Analysis / System Alerts</h3>
+            {% for category, msg in messages %}
+                <div class="alert-card {% if '🪲' in msg or '⚠️' in msg or '🚫' in msg or '📉' in msg or category == 'danger' %}danger{% elif '💧' in msg or '🗓️' in msg or '🌱' in msg or category == 'info' %}info{% else %}success{% endif %}">
+                    {{ msg }}
+                </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Farmer Name</th>
+                    <th>Location (District, State)</th>
+                    <th>Land Size (Plots / Ha)</th>
+                    <th>Contact Info</th>
+                    <th>Soil pH</th>
+                    <th>Planting Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in farmers %}
+                <tr>
+                    <td><b>{{ f.name }}</b></td>
+                    <td>{{ f.district }}, {{ f.state }}</td>
+                    <td>{{ f.plots }} plots ({{ f.hectare|round(2) }} Ha)</td>
+                    <td>{{ f.phone }}<br><small>{{ f.user_email }}</small></td>
+                    <td><b style="color: #2e7d32;">{{ f.ph }}</b></td>
+                    <td><code>{{ f.planting_date }}</code></td>
+                    <td>
+                        <a href="{{ url_for('analyze_farmer', phone=f.phone) }}" class="btn btn-send">Analyze</a>
+                        <a href="{{ url_for('notify_individual', phone=f.phone) }}" class="btn btn-notify">Notify</a>
+                        <a href="{{ url_for('delete', phone=f.phone) }}" class="btn btn-del" onclick="return confirm('Delete this farmer?')">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- AI Chat Widget UI -->
+    <div id="chat-widget">
+        <button onclick="toggleChat()" style="background: #2e7d32; color: white; border: none; padding: 15px; border-radius: 50%; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-weight: bold;">🌽AI🌽</button>
+        <div id="chat-box">
+            <div class="chat-header">
+                <span>MaizeTech Admin AI</span>
+                <button onclick="toggleChat()" style="background:none; border:none; color:white; cursor:pointer;">×</button>
+            </div>
+            <div id="messages"></div>
+            
+            <div style="display: flex; border-top: 1px solid #eee; background: white; padding: 10px;">
+                <textarea id="user-input" placeholder="Query data logs or farmers..." style="flex: 1; border: 1px solid #ddd; padding: 8px; border-radius: 6px; outline: none; resize: none; height: 40px; font-family: inherit; overflow-y: hidden;"></textarea>
+                <button onclick="sendMessage()" style="background: #2e7d32; color: white; border: none; padding: 0 15px; cursor: pointer; border-radius: 6px; margin-left: 5px; font-weight: bold;">Send</button>
+            </div>
+
+            <div style="background: #f4f4f4; padding: 10px; font-size: 11px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <button onclick="copyChat()" style="background: white; border: 1px solid #ddd; padding: 3px 7px; border-radius: 4px; cursor: pointer;">Copy</button>
+                    <button onclick="exportChat()" style="background: #2196f3; color: white; border: none; padding: 3px 7px; border-radius: 4px; cursor: pointer; margin-left: 3px;">Export</button>
+                </div>
+                <div>
+                    <button onclick="clearLog()" style="background: #0c05e3; color: white; border: none; padding: 3px 7px; border-radius: 4px; cursor: pointer;">Clear Log</button>
+                    <button onclick="clearHistory()" style="background: #d32f2f; color: white; border: none; padding: 3px 7px; border-radius: 4px; cursor: pointer; margin-left: 3px;">Clear Chat</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function toggleChat() {
+            const box = document.getElementById('chat-box');
+            const msgDiv = document.getElementById('messages');
+            if (box.style.display === 'none' || box.style.display === '') {
+                const res = await fetch('/get-chat-history');
+                const history = await res.json();
+                msgDiv.innerHTML = history.map(m => 
+                    `<div style="margin-bottom: 10px; align-self: ${m.role === 'user' ? 'flex-end' : 'flex-start'}; background: ${m.role === 'user' ? '#e8f5e9' : 'white'}; padding: 8px 12px; border-radius: 10px; border: 1px solid #eee;">
+                        <b>${m.role === 'user' ? 'You' : 'AI'}:</b><br>${m.content}
+                    </div>`
+                ).join('');
+                box.style.display = 'flex';
+                msgDiv.scrollTop = msgDiv.scrollHeight;
+            } else {
+                box.style.display = 'none';
+            }
+        }
+
+        // AUTO-EXPAND and KEY LISTENERS
+        document.getElementById('user-input').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        document.getElementById('user-input').addEventListener('input', function () {
+            this.style.height = '40px';
+            const newHeight = Math.min(this.scrollHeight, 150);
+            this.style.height = newHeight + 'px';
+        });
+
+        async function sendMessage() {
+            const input = document.getElementById('user-input');
+            const msgDiv = document.getElementById('messages');
+            const userMsg = input.value;
+            if(!userMsg.trim()) return;
+
+            msgDiv.innerHTML += `<div style="margin-bottom: 10px; align-self: flex-end; background: #e8f5e9; padding: 8px 12px; border-radius: 10px; border: 1px solid #eee;"><b>You:</b><br>${userMsg.replace(/\n/g, '<br>')}</div>`;
+            input.value = '';
+            input.style.height = '40px'; // Reset height
+            msgDiv.scrollTop = msgDiv.scrollHeight;
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({message: userMsg})
+                });
+                const data = await response.json();
+                msgDiv.innerHTML += `<div style="margin-bottom: 10px; align-self: flex-start; background: white; padding: 8px 12px; border-radius: 10px; border: 1px solid #eee; color: #2e7d32;"><b>AI:</b><br>${data.response}</div>`;
+                msgDiv.scrollTop = msgDiv.scrollHeight;
+            } catch (error) {
+                msgDiv.innerHTML += `<div style="color: red; font-size: 11px;">Error connecting to AI</div>`;
+            }
+        }
+
+        async function clearHistory() { if (confirm("Clear chat?")) { await fetch('/clear-chat', { method: 'POST' }); location.reload(); } }
+        async function clearLog() { if (confirm("Clear logs?")) { await fetch('/clear_log', { method: 'POST' }); location.reload(); } }
+        
+        function exportChat() {
+            const text = document.getElementById('messages').innerText;
+            if (!text.trim()) return;
+            const blob = new Blob([text], { type: 'text/plain' });
+            const element = document.createElement('a');
+            element.href = URL.createObjectURL(blob);
+            element.download = "MaizeTech_Admin_Chat.txt";
+            element.click();
+        }
+
+        async function copyChat() {
+            const text = document.getElementById('messages').innerText;
+            if (!text.trim()) return;
+            await navigator.clipboard.writeText(text);
+            alert("History copied!");
+        }
+    </script>
+</body>
+</html>

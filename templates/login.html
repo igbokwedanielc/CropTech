@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login | © 2026 MT | MaizeTech Nigeria</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f0f2f5; display: flex; align-items: center; justify-content: center; height: 100vh; flex-direction: column; }
+        .login-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 350px; text-align: center; }
+        .brand { color: #2e7d32; font-size: 32px; font-weight: bold; margin-bottom: 5px; display: block; }
+        .motto { color: #666; font-size: 14px; margin-bottom: 30px; display: block; }
+        .form-group { text-align: left; margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 12px; color: #555; text-transform: uppercase; }
+        input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; outline: none; font-family: inherit; }
+        input:focus { border-color: #2e7d32; border-width: 2px; }
+        .btn-login { background: #2e7d32; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; font-size: 16px; transition: 0.3s; }
+        .btn-login:hover { background: #1e3d1a; }
+        .forgot-pass { display: block; margin-top: 20px; font-size: 13px; color: #2e7d32; text-decoration: none; font-weight: 600; }
+        .forgot-pass:hover { text-decoration: underline; }
+        .alert { background: #ffebee; color: #c62828; padding: 10px; border-radius: 6px; font-size: 13px; margin-bottom: 20px; border: 1px solid #ffcdd2; }
+        .alert-info { background: #e8f5e9; color: #2e7d32; border-color: #c8e6c9; }
+    </style>
+</head>
+<body>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, msg in messages %}
+            <div class="alert {% if category == 'info' or category == 'success' %}alert-info{% endif %}" style="width: 100%; max-width: 350px; box-sizing: border-box;">
+                {{ msg }}
+            </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="login-card">
+        <span class="brand">🌽 MaizeTech</span>
+        <span class="motto">Nigeria Precision Agriculture</span>
+
+        <form method="POST">
+            <div class="form-group">
+                <label>Username (Phone)</label>
+                <input type="text" name="username" required placeholder="+234...">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" required placeholder="••••••••">
+            </div>
+            <button type="submit" class="btn-login">Sign In to Dashboard</button>
+        </form>
+        
+        <a href="{{ url_for('forgot_password') }}" class="forgot-pass">Forgot Password?</a>
+    </div>
+
+    <p style="margin-top: 25px; color: #999; font-size: 12px;">&copy; 2026 MT | MaizeTech Nigeria | Secure Access</p>
+
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Farm Dashboard | MaizeTech Nigeria</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #f0f2f5; color: #333; }
+        .navbar { background: #2e7d32; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .container { padding: 30px; max-width: 1000px; margin: auto; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; border-top: 5px solid #2e7d32; }
+        .yield-badge { background: #e8f5e9; color: #2e7d32; padding: 25px; border-radius: 10px; display: inline-block; font-size: 32px; font-weight: bold; margin: 15px 0; border: 1px solid #c8e6c9; width: 100%; box-sizing: border-box; text-align: center; }
+        .status-box { background: #fff3e0; padding: 15px; border-radius: 8px; border-left: 5px solid #ff9800; margin-bottom: 20px; font-size: 16px; }
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-top: 15px; }
+        .stat-item { background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #eee; }
+        .stat-label { font-size: 12px; color: #666; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 5px; }
+        .stat-value { font-size: 20px; color: #2e7d32; font-weight: bold; }
+        .advisory-item { padding: 15px; border-bottom: 1px solid #f0f0f0; font-size: 16px; line-height: 1.6; color: #333; display: flex; align-items: center; }
+        .advisory-item:last-child { border-bottom: none; }
+        .logout-btn { color: white; text-decoration: none; border: 1px solid rgba(255,255,255,0.5); padding: 8px 20px; border-radius: 20px; font-size: 14px; transition: 0.3s; }
+        .logout-btn:hover { background: white; color: #2e7d32; }
+        .security-note { font-size: 13px; color: #888; margin-top: 20px; text-align: center; background: #fff; padding: 15px; border-radius: 8px; }
+        .security-note a { color: #2e7d32; text-decoration: none; font-weight: bold; }
+        code { background: #eee; padding: 2px 6px; border-radius: 4px; color: #d32f2f; }
+
+        /* --- BUBBLE AI CHAT UI STYLING --- */
+        #chat-widget { position: fixed; bottom: 20px; right: 20px; z-index: 2000; }
+        #chat-box { display: none; width: 350px; height: 500px; background: white; border-radius: 12px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); flex-direction: column; overflow: hidden; position: absolute; bottom: 75px; right: 0; border: 1px solid #ddd; }
+        .chat-header { background: #2e7d32; color: white; padding: 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        #messages { flex: 1; padding: 15px; overflow-y: auto; font-size: 14px; background: #fafafa; display: flex; flex-direction: column; gap: 10px; }
+        .msg-bubble { padding: 10px 14px; border-radius: 15px; max-width: 85%; line-height: 1.4; word-wrap: break-word; }
+        .user-bubble { align-self: flex-end; background: #2e7d32; color: white; border-bottom-right-radius: 2px; }
+        .ai-bubble { align-self: flex-start; background: #e0e0e0; color: #333; border-bottom-left-radius: 2px; }
+        .chat-input-area { display: flex; border-top: 1px solid #eee; background: white; padding: 10px; }
+        #user-input { flex: 1; border: 1px solid #ddd; padding: 8px; border-radius: 6px; outline: none; resize: none; height: 40px; font-family: inherit; overflow-y: hidden; }
+        .chat-footer { background: #f4f4f4; padding: 10px; font-size: 11px; display: flex; justify-content: space-around; gap: 5px; }
+        .btn-sm { font-size: 10px; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; color: white; text-transform: uppercase; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h2>🌽 MaizeTech Farmer Portal</h2>
+        <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+    </div>
+
+    <div class="container">
+        <!-- Profile & Hybrid Yield Result -->
+        <div class="card">
+            <h2 style="margin-top:0; color: #2e7d32;">Welcome back, {{ farmer.name }}</h2>
+            <p style="color: #666; margin-bottom: 5px;">
+                Location: <b>{{ farmer.district }}, {{ farmer.state }}</b> 
+                (<code>{{ farmer.lat }}, {{ farmer.lon }}</code>)
+            </p>
+            
+            <div class="yield-badge">
+                <span style="font-size: 14px; display: block; font-weight: normal; color: #666; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">
+                    Hybrid Yield Prediction (RF 65% + LR 35%)
+                </span>
+                {{ hybrid_res.Estimated_Yield_MT }} MT/Ha
+            </div>
+
+            <div class="status-box">
+                <strong>Current Soil Health:</strong> {{ hybrid_res.Soil_Health_Status }}<br>
+                <span style="font-size: 13px; color: #555;">*Based on your latest pH and composition data.</span>
+            </div>
+            
+            <p style="font-size: 12px; color: #999; font-style: italic;">
+                The prediction is recalculated automatically whenever local weather conditions change.
+                For your farm size of <b>{{ farmer.plots }} Plots</b> ({{ farmer.hectare }} Hectares).
+            </p>
+        </div>
+
+        <!-- Farm Stats Grid -->
+        <div class="card">
+            <h3 style="margin-top:0; font-size: 18px; color: #444; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">
+                📊 Farm & Soil Profile
+            </h3>
+            <div class="stat-grid">
+                <div class="stat-item">
+                    <span class="stat-label">Farm Size (Plots)</span>
+                    <span class="stat-value">{{ farmer.plots }} Plots</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Land Size</span>
+                    <span class="stat-value">{{ hybrid_res.Computed_Hectares }} Ha</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Soil pH</span>
+                    <span class="stat-value">{{ farmer.ph }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Clay Content</span>
+                    <span class="stat-value">{{ farmer.clay }}%</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Sand Content</span>
+                    <span class="stat-value">{{ farmer.sand }}%</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Silt Content</span>
+                    <span class="stat-value">{{ farmer.silt }}%</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Planting Date</span>
+                    <span class="stat-value" style="font-size: 15px;">{{ farmer.planting_date }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Advisory Section -->
+        <div class="card">
+            <h3 style="margin-top:0; font-size: 18px; color: #444; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">
+                💡 Smart Agronomy Advisory
+            </h3>
+            <div class="advisory-section">
+                {% for rec in advisory %}
+                    <div class="advisory-item">
+                        <span style="margin-right: 10px;">{{ rec }}</span>
+                    </div>
+                {% else %}
+                    <p style="color: #999; font-style: italic; text-align: center; padding: 20px;">
+                        No critical alerts at this moment.
+                    </p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="security-note">
+            🛡️ <b>Security Center:</b> Need to change your access credentials? 
+            <a href="{{ url_for('forgot_password') }}">Request a secure password reset link</a>
+        </div>
+    </div>
+
+    <!-- BUBBLE AI CHAT WIDGET -->
+    <div id="chat-widget">
+        <button onclick="toggleChat()" style="background: #2e7d32; color: white; border: none; padding: 15px; border-radius: 50%; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-weight: bold;">🌽AI🌽</button>
+        <div id="chat-box">
+            <div class="chat-header">
+                <span>MaizeTech Personal AI</span>
+                <button onclick="toggleChat()" style="background:none; border:none; color:white; cursor:pointer; font-size:20px;">×</button>
+            </div>
+            <div id="messages">
+                <div class="msg-bubble ai-bubble">Hello {{ farmer.name }}! I am your private farming assistant. How can I help you today?</div>
+            </div>
+            
+            <div class="chat-input-area">
+                <textarea id="user-input" placeholder="Ask about your farm..." style="flex: 1; border: 1px solid #ddd; padding: 8px; border-radius: 6px; outline: none; resize: none; height: 40px; font-family: inherit; overflow-y: hidden;"></textarea>
+                <button onclick="sendMessage()" style="background: #2e7d32; color: white; border: none; padding: 0 15px; cursor: pointer; border-radius: 6px; margin-left: 5px; font-weight: bold;">Send</button>
+            </div>
+
+            <div class="chat-footer">
+                <button onclick="saveChat()" class="btn-sm" style="background:#2196f3;">💾 Save Session</button>
+                <button onclick="clearChat()" class="btn-sm" style="background:#d32f2f;">🗑️ Clear History</button>
+            </div>
+        </div>
+    </div>
+
+    <footer style="text-align: center; padding: 40px 0; color: #aaa; font-size: 12px; line-height: 1.5;">
+        &copy; 2026 MT | MaizeTech Nigeria<br>
+        Precision Agriculture Solutions & Hybrid Yield Modeling
+    </footer>
+
+    <script>
+        async function toggleChat() {
+            const box = document.getElementById('chat-box');
+            box.style.display = (box.style.display === 'none' || box.style.display === '') ? 'flex' : 'none';
+        }
+
+        // Auto-expand textarea
+        document.getElementById('user-input').addEventListener('input', function () {
+            this.style.height = '40px';
+            const newHeight = Math.min(this.scrollHeight, 150);
+            this.style.height = newHeight + 'px';
+        });
+
+        // Enter key to send
+        document.getElementById('user-input').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        async function sendMessage() {
+            const input = document.getElementById('user-input');
+            const msgDiv = document.getElementById('messages');
+            const userMsg = input.value;
+            if(!userMsg.trim()) return;
+
+            msgDiv.innerHTML += `<div class="msg-bubble user-bubble">${userMsg.replace(/\n/g, '<br>')}</div>`;
+            input.value = '';
+            input.style.height = '40px';
+            msgDiv.scrollTop = msgDiv.scrollHeight;
+
+            try {
+                const response = await fetch('/farmer-chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({message: userMsg})
+                });
+                const data = await response.json();
+                msgDiv.innerHTML += `<div class="msg-bubble ai-bubble"><b>AI:</b><br>${data.response}</div>`;
+                msgDiv.scrollTop = msgDiv.scrollHeight;
+            } catch (error) {
+                msgDiv.innerHTML += `<div class="msg-bubble ai-bubble" style="color: red;">Error: Could not reach assistant.</div>`;
+            }
+        }
+
+        async function saveChat() { 
+            await fetch('/save-session', {method:'POST'}); 
+            alert("Chat session saved to your profile!"); 
+        }
+
+        async function clearChat() { 
+            if(confirm("Permanently clear your chat history?")) {
+                await fetch('/clear-history', {method:'POST'}); 
+                document.getElementById('messages').innerHTML='<div class="msg-bubble ai-bubble">History cleared. How can I help you today?</div>'; 
+            }
+        }
+    </script>
+</body>
+</html>
